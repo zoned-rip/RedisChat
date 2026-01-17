@@ -27,6 +27,19 @@ public class RedisDataManager extends RedisAbstract implements DataManager {
     private final RedisChat plugin;
     public static int pubSubIndex = 0;
 
+    private static void maybeDisableLettuceEpoll(@NotNull RedisChat redisChat) {
+        if (System.getProperty("io.lettuce.core.epoll") != null) {
+            return;
+        }
+        try {
+            Class.forName("io.netty.channel.epoll.EpollIoHandler", false, RedisDataManager.class.getClassLoader());
+        } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+            System.setProperty("io.lettuce.core.epoll", "false");
+            redisChat.getLogger().warning("Netty epoll classes are not available (missing io.netty.channel.epoll.EpollIoHandler). " +
+                    "Disabling Lettuce epoll and falling back to NIO to prevent startup failure.");
+        }
+    }
+
     public RedisDataManager(RedisClient redisClient, RedisChat redisChat) {
         super(redisClient, redisChat.config.redis.poolSize() <= 0 ? 1 : redisChat.config.redis.poolSize());
         this.plugin = redisChat;
@@ -43,6 +56,7 @@ public class RedisDataManager extends RedisAbstract implements DataManager {
     }
 
     public static RedisDataManager startup(RedisChat redisChat) {
+        maybeDisableLettuceEpoll(redisChat);
         RedisURI.Builder redisURIBuilder = RedisURI.builder()
                 .withHost(redisChat.config.redis.host())
                 .withPort(redisChat.config.redis.port())

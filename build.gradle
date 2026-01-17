@@ -121,6 +121,10 @@ shadowJar {
     relocate 'com.github.Anon8281.universalScheduler', 'dev.unnm3d.redischat.libraries.universalScheduler'
 }
 
+jar {
+    archiveClassifier.set('plain')
+}
+
 def sourceJavaVersion = 21
 def releaseJavaVersion = 21
 

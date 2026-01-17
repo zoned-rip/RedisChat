@@ -95,6 +95,8 @@ public final class RedisChat extends JavaPlugin {
     @Getter
     private MailGUIManager mailGUIManager;
 
+    private boolean uniformUsed;
+
     public Config config;
     public FiltersConfig filterSettings;
     public Messages messages;
@@ -346,7 +348,13 @@ public final class RedisChat extends JavaPlugin {
         if (this.dataManager != null)
             this.dataManager.clearInvShareCache();
 
-        PaperUniform.getInstance(this).shutdown();
+        if (uniformUsed) {
+            try {
+                PaperUniform.getInstance(this).shutdown();
+            } catch (IllegalStateException e) {
+                getLogger().warning("Skipping Uniform shutdown during disable: " + e.getMessage());
+            }
+        }
         // Commands are unregistered automatically by CommandAPI plugin
         registeredCommands.clear();
 
@@ -385,6 +393,7 @@ public final class RedisChat extends JavaPlugin {
     }
 
     public void loadUniformCommand(RedisChatCommand command) {
+        uniformUsed = true;
         PaperUniform.getInstance(this, false).register(command.getCommand());
     }
 
